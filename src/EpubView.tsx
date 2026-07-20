@@ -61,26 +61,15 @@ Date: ${moment().toLocaleString()}
   async onLoadFile(file: TFile): Promise<void> {
     ReactDOM.unmountComponentAtNode(this.contentEl);
     this.contentEl.empty();
-    const viewHeaderStyle = getComputedStyle(this.containerEl.parentElement.querySelector('div.view-header'));
-    const viewHeaderHeight = parseFloat(viewHeaderStyle.height);
-    const viewHeaderWidth = parseFloat(viewHeaderStyle.width);
-
-    const viewContentStyle = getComputedStyle(this.containerEl.parentElement.querySelector('div.view-content'));
-    const viewContentPaddingBottom = parseFloat(viewContentStyle.paddingBottom);
-    const viewContentPaddingTop = parseFloat(viewContentStyle.paddingTop);
-
-    const tocOffset = (viewHeaderHeight < viewHeaderWidth ? viewHeaderHeight : 0) + viewContentPaddingTop + 1;
-    const tocBottomOffset = viewContentPaddingBottom;
-
+    this.contentEl.style.height = '100%';
+    this.contentEl.style.overflow = 'hidden';
     const contents = await this.app.vault.adapter.readBinary(file.path);
     ReactDOM.render(
       <EpubReader
         contents={contents}
         title={file.basename}
         scrolled={this.settings.scrolledView}
-        tocOffset={tocOffset}
-        tocBottomOffset={tocBottomOffset}
-        leaf={this.leaf} />,
+        mouseWheelPageTurn={this.settings.mouseWheelPageTurn} />,
       this.contentEl
     );
   }

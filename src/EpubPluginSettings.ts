@@ -3,6 +3,7 @@ import EpubPlugin from "./EpubPlugin";
 
 export interface EpubPluginSettings {
 	scrolledView: boolean;
+	mouseWheelPageTurn: boolean;
 	notePath: string;
 	useSameFolder: boolean;
 	tags: string;
@@ -10,6 +11,7 @@ export interface EpubPluginSettings {
 
 export const DEFAULT_SETTINGS: EpubPluginSettings = {
 	scrolledView: false,
+	mouseWheelPageTurn: true,
 	notePath: '/',
 	useSameFolder: true,
 	tags: 'notes/booknotes'
@@ -35,6 +37,16 @@ export class EpubSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.scrolledView)
 				.onChange(async (value) => {
 					this.plugin.settings.scrolledView = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName("滚轮翻页 / Mouse wheel page turn")
+			.setDesc("在分页模式下，向上或向下滚动鼠标滚轮翻上一页或下一页。 / In paginated mode, the mouse wheel turns to the previous or next page.")
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.mouseWheelPageTurn)
+				.onChange(async (value) => {
+					this.plugin.settings.mouseWheelPageTurn = value;
 					await this.plugin.saveSettings();
 				}));
 
