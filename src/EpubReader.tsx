@@ -5,9 +5,11 @@ import type { Contents, Rendition } from 'epubjs';
 import useLocalStorageState from 'use-local-storage-state';
 import { getEpubOptions, getResizeDimensions, MAX_READING_PAGE_WIDTH } from './paginationLayout';
 import { navigatePage } from './pageNavigation';
+import { getFontSizeAnchor, reflowFontSizeAtAnchor, shouldPreserveFontSizeAnchor } from './fontSizeAnchor';
 import { injectPublisherStyles } from './publisherStyles';
 import { resolveReaderColors, type ReaderBackgroundMode } from './readerBackground';
 import { flattenToc, getTocSelection, type TocEntry, type TocItem } from './tocNavigation';
+import { getFirstVisibleTextCfi } from './visibleTextAnchor';
 import { getWheelPageAction } from './wheelNavigation';
 
 export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, readerBackgroundMode, readerBackgroundColor }: {
@@ -21,6 +23,8 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
   const [location, setLocation] = useLocalStorageState<string | number>(`epub-${title}`, { defaultValue: 0 });
   const renditionRef = useRef<Rendition | null>(null);
   const readerHostRef = useRef<HTMLDivElement | null>(null);
+  const fontSizeAnchorRef = useRef<string | null>(null);
+  const fontSizeAnchorResetTimerRef = useRef<number | null>(null);
   const lastWheelPageTurnAtRef = useRef(0);
   const wheelSettingsRef = useRef({ scrolled, mouseWheelPageTurn });
   const [fontSize, setFontSize] = useState(100); 
@@ -70,7 +74,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     return () => themeObserver.disconnect();
   }, [updateTheme]);
 
-  const resizeRendition = useCallback(() => {
+  const resizeRendition = useCallback((anchor: string | null = null) => {
     const readerHost = readerHostRef.current;
     if (!readerHost) return;
 
@@ -80,7 +84,12 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     if (!readerViewport) return;
 
     const dimensions = getResizeDimensions(rendition?.manager != null, readerViewport.clientWidth, readerViewport.clientHeight);
-    if (dimensions != null) rendition?.resize(dimensions.width, dimensions.height);
+    if (dimensions != null && rendition != null) {
+      // epub.js 的声明文件遗漏了第三个 epubcfi 参数；运行时 API 会将其作为本次重排的定位锚点。
+      // epub.js type definitions omit the third epubcfi parameter; the runtime API uses it as the anchor for this reflow.
+      (rendition as Rendition & { resize(width: number, height: number, epubcfi?: string): void })
+        .resize(dimensions.width, dimensions.height, anchor ?? undefined);
+    }
   }, []);
 
   const applyPublisherStyles = useCallback((document: Document) => {
@@ -88,14 +97,38 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     if (contentWindow == null || document.documentElement == null || document.head == null) return;
 
     void injectPublisherStyles(document, (href) => contentWindow.fetch(href)).then((injected) => {
-      if (injected) window.requestAnimationFrame(resizeRendition);
+      if (injected) window.requestAnimationFrame(() => resizeRendition());
     });
   }, [resizeRendition]);
 
   const updateFontSize = useCallback((size: number) => {
-    renditionRef.current?.themes.fontSize(`${size}%`);
-    window.requestAnimationFrame(resizeRendition);
-  }, [resizeRendition]);
+    const rendition = renditionRef.current;
+    if (rendition == null) return;
+
+    if (!shouldPreserveFontSizeAnchor(scrolled, rendition.manager != null)) {
+      rendition.themes.fontSize(`${size}%`);
+      window.requestAnimationFrame(() => resizeRendition());
+      return;
+    }
+
+    const renderedContents = rendition.getContents() as unknown as Contents[];
+    const visibleTextAnchor = fontSizeAnchorRef.current == null && readerHostRef.current != null
+      ? renderedContents.map((contents) => getFirstVisibleTextCfi(contents, readerHostRef.current!)).find((cfi) => cfi != null) ?? null
+      : null;
+    const anchor = getFontSizeAnchor(fontSizeAnchorRef.current ?? visibleTextAnchor, rendition.currentLocation());
+    fontSizeAnchorRef.current = anchor;
+    reflowFontSizeAtAnchor(rendition, size, anchor, resizeRendition, window.requestAnimationFrame);
+
+    if (fontSizeAnchorResetTimerRef.current != null) window.clearTimeout(fontSizeAnchorResetTimerRef.current);
+    fontSizeAnchorResetTimerRef.current = window.setTimeout(() => {
+      fontSizeAnchorRef.current = null;
+      fontSizeAnchorResetTimerRef.current = null;
+    }, 250);
+  }, [resizeRendition, scrolled]);
+
+  useEffect(() => () => {
+    if (fontSizeAnchorResetTimerRef.current != null) window.clearTimeout(fontSizeAnchorResetTimerRef.current);
+  }, []);
 
   useEffect(() => {
     updateFontSize(fontSize);
@@ -105,7 +138,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     const readerHost = readerHostRef.current;
     if (!readerHost) return;
 
-    const resizeObserver = new ResizeObserver(resizeRendition);
+    const resizeObserver = new ResizeObserver(() => resizeRendition());
     resizeObserver.observe(readerHost);
     resizeRendition();
 
