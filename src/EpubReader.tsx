@@ -4,13 +4,19 @@ import { ReactReader, ReactReaderStyle, type IReactReaderStyle } from 'react-rea
 import type { Contents, Rendition } from 'epubjs';
 import useLocalStorageState from 'use-local-storage-state';
 import { getEpubOptions, getResizeDimensions, MAX_READING_PAGE_WIDTH } from './paginationLayout';
+import { navigatePage } from './pageNavigation';
+import { injectPublisherStyles } from './publisherStyles';
+import { resolveReaderColors, type ReaderBackgroundMode } from './readerBackground';
+import { flattenToc, getTocSelection, type TocEntry, type TocItem } from './tocNavigation';
 import { getWheelPageAction } from './wheelNavigation';
 
-export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
+export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, readerBackgroundMode, readerBackgroundColor }: {
   contents: ArrayBuffer;
   title: string;
   scrolled: boolean;
   mouseWheelPageTurn: boolean;
+  readerBackgroundMode: ReaderBackgroundMode;
+  readerBackgroundColor: string;
 }) => {
   const [location, setLocation] = useLocalStorageState<string | number>(`epub-${title}`, { defaultValue: 0 });
   const renditionRef = useRef<Rendition | null>(null);
@@ -18,20 +24,51 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
   const lastWheelPageTurnAtRef = useRef(0);
   const wheelSettingsRef = useRef({ scrolled, mouseWheelPageTurn });
   const [fontSize, setFontSize] = useState(100); 
+  const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
+  const [tocOpen, setTocOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => document.body.classList.contains('theme-dark'));
 
   wheelSettingsRef.current = { scrolled, mouseWheelPageTurn };
-
-  const isDarkMode = document.body.classList.contains('theme-dark');
 
   const locationChanged = useCallback((epubcifi: string | number) => {
     setLocation(epubcifi);
   }, [setLocation]);
 
-  const updateTheme = useCallback((rendition: Rendition, theme: 'light' | 'dark') => {
-    const themes = rendition.themes;
-    themes.override('color', theme === 'dark' ? '#fff' : '#000');
-    themes.override('background', theme === 'dark' ? '#000' : '#fff');
+  const tocChanged = useCallback((toc: unknown) => {
+    setTocEntries(Array.isArray(toc) ? flattenToc(toc as TocItem[]) : []);
   }, []);
+
+  const selectTocEntry = useCallback((href: string) => {
+    const selection = getTocSelection(href);
+    setLocation(selection.location);
+    setTocOpen(selection.tocOpen);
+  }, [setLocation]);
+
+  const getReaderColors = useCallback(() => {
+    const rootStyles = getComputedStyle(document.body);
+    return resolveReaderColors(
+      readerBackgroundMode,
+      readerBackgroundColor,
+      rootStyles.getPropertyValue('--background-primary').trim() || '#ffffff',
+      rootStyles.getPropertyValue('--text-normal').trim() || '#000000',
+    );
+  }, [readerBackgroundColor, readerBackgroundMode]);
+
+  const updateTheme = useCallback((rendition: Rendition) => {
+    const themes = rendition.themes;
+    const colors = getReaderColors();
+    themes.override('color', colors.text);
+    themes.override('background', colors.background);
+  }, [getReaderColors]);
+
+  useEffect(() => {
+    const themeObserver = new MutationObserver(() => {
+      setIsDarkMode(document.body.classList.contains('theme-dark'));
+      if (renditionRef.current != null) updateTheme(renditionRef.current);
+    });
+    themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => themeObserver.disconnect();
+  }, [updateTheme]);
 
   const resizeRendition = useCallback(() => {
     const readerHost = readerHostRef.current;
@@ -45,6 +82,15 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
     const dimensions = getResizeDimensions(rendition?.manager != null, readerViewport.clientWidth, readerViewport.clientHeight);
     if (dimensions != null) rendition?.resize(dimensions.width, dimensions.height);
   }, []);
+
+  const applyPublisherStyles = useCallback((document: Document) => {
+    const contentWindow = document.defaultView;
+    if (contentWindow == null || document.documentElement == null || document.head == null) return;
+
+    void injectPublisherStyles(document, (href) => contentWindow.fetch(href)).then((injected) => {
+      if (injected) window.requestAnimationFrame(resizeRendition);
+    });
+  }, [resizeRendition]);
 
   const updateFontSize = useCallback((size: number) => {
     renditionRef.current?.themes.fontSize(`${size}%`);
@@ -66,6 +112,31 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
     return () => resizeObserver.disconnect();
   }, [resizeRendition]);
 
+  useEffect(() => {
+    const rootDocument = window.document;
+
+    const applyStylesToFrames = () => {
+      rootDocument.querySelectorAll('iframe[id^="epubjs-view-"]').forEach((frame) => {
+        if (frame.contentDocument != null) applyPublisherStyles(frame.contentDocument);
+      });
+    };
+    const handleFrameLoad = (event: Event) => {
+      if (event.target instanceof HTMLIFrameElement && event.target.contentDocument != null) {
+        applyPublisherStyles(event.target.contentDocument);
+      }
+    };
+    const frameObserver = new MutationObserver(applyStylesToFrames);
+
+    rootDocument.addEventListener('load', handleFrameLoad, true);
+    frameObserver.observe(rootDocument.body, { childList: true, subtree: true });
+    applyStylesToFrames();
+
+    return () => {
+      rootDocument.removeEventListener('load', handleFrameLoad, true);
+      frameObserver.disconnect();
+    };
+  }, [applyPublisherStyles]);
+
   const handleContentWheel = useCallback((event: WheelEvent) => {
     const settings = wheelSettingsRef.current;
     const now = Date.now();
@@ -84,14 +155,22 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
     event.stopPropagation();
     lastWheelPageTurnAtRef.current = now;
 
-    if (action === 'next') {
-      renditionRef.current?.next();
-    } else {
-      renditionRef.current?.prev();
-    }
+    const rendition = renditionRef.current;
+    if (rendition != null) navigatePage(action === 'next' ? 'next' : 'previous', rendition);
   }, []);
 
-  const readerStyles = isDarkMode ? darkReaderTheme : lightReaderTheme;
+  const readerColors = getReaderColors();
+  const baseReaderStyles = isDarkMode ? darkReaderTheme : lightReaderTheme;
+  const readerStyles: IReactReaderStyle = {
+    ...baseReaderStyles,
+    readerArea: {
+      ...baseReaderStyles.readerArea,
+      backgroundColor: readerColors.background,
+    },
+  };
+  const tocColors = isDarkMode
+    ? { background: '#111', border: '#333', text: '#f2f2f2', mutedText: '#bbb' }
+    : { background: '#fff', border: '#e6e6e6', text: '#333', mutedText: '#666' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', width: '100%' }}>
@@ -110,24 +189,96 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
         <div ref={readerHostRef} style={{ height: '100%', maxWidth: `${MAX_READING_PAGE_WIDTH}px`, minHeight: 0, overflow: 'hidden', position: 'relative', width: '100%' }}>
           <ReactReader
           title={title}
-          showToc={true}
+          showToc={false}
           location={location}
           locationChanged={locationChanged}
+          tocChanged={tocChanged}
           swipeable={false}
           url={contents}
           getRendition={(rendition: Rendition) => {
             renditionRef.current = rendition;
-            rendition.hooks.content.register((contents: Contents) => {
+            const enhanceContents = (contents: Contents) => {
               const body = contents.window.document.body;
               body.oncontextmenu = () => false;
               contents.window.addEventListener('wheel', handleContentWheel, { passive: false });
-            });
-            updateTheme(rendition, isDarkMode ? 'dark' : 'light');
+              applyPublisherStyles(contents.window.document);
+            };
+            rendition.hooks.content.register(enhanceContents);
+            const enhanceRenderedContents = () => {
+              (rendition.getContents() as unknown as Contents[]).forEach(enhanceContents);
+            };
+            enhanceRenderedContents();
+            window.requestAnimationFrame(enhanceRenderedContents);
+            updateTheme(rendition);
             updateFontSize(fontSize);
           }}
           epubOptions={getEpubOptions(scrolled)}
           readerStyles={readerStyles}
           />
+          <button
+            aria-label="上一页 / Previous page"
+            className="epub-icon-button epub-page-button epub-page-button--previous"
+            onClick={() => {
+              const rendition = renditionRef.current;
+              if (rendition != null) navigatePage('previous', rendition);
+            }}
+          >
+            <ReaderIcon name="previous" />
+          </button>
+          <button
+            aria-label="下一页 / Next page"
+            className="epub-icon-button epub-page-button epub-page-button--next"
+            onClick={() => {
+              const rendition = renditionRef.current;
+              if (rendition != null) navigatePage('next', rendition);
+            }}
+          >
+            <ReaderIcon name="next" />
+          </button>
+          {!tocOpen && tocEntries.length > 0 && (
+            <button
+              aria-label="打开目录 / Open table of contents"
+              className="epub-icon-button epub-toc-toggle"
+              onClick={() => setTocOpen(true)}
+            >
+              <ReaderIcon name="menu" />
+            </button>
+          )}
+          {tocOpen && (
+            <div
+              onClick={() => setTocOpen(false)}
+              style={{ bottom: 0, left: 0, position: 'absolute', right: 0, top: 0, zIndex: 30 }}
+            >
+              <aside
+                aria-label="目录 / Table of contents"
+                onClick={(event) => event.stopPropagation()}
+                style={{ background: tocColors.background, bottom: 0, boxShadow: `1px 0 12px ${isDarkMode ? '#000' : '#ddd'}`, color: tocColors.text, left: 0, overflowY: 'auto', position: 'absolute', top: 0, width: 256 }}
+              >
+                <div style={{ alignItems: 'center', borderBottom: `1px solid ${tocColors.border}`, display: 'flex', justifyContent: 'space-between', padding: '16px 14px 14px' }}>
+                  <strong style={{ fontSize: 20 }}>目录</strong>
+                  <button
+                    aria-label="关闭目录 / Close table of contents"
+                    className="epub-icon-button epub-toc-close"
+                    onClick={() => setTocOpen(false)}
+                  >
+                    <ReaderIcon name="close" />
+                  </button>
+                </div>
+                <nav style={{ padding: '12px 0 20px' }}>
+                  {tocEntries.map((entry) => (
+                    <button
+                      key={entry.href}
+                      className="epub-toc-entry"
+                      onClick={() => selectTocEntry(entry.href)}
+                      style={{ appearance: 'none', background: 'transparent', border: 0, borderRadius: 0, boxShadow: 'none', color: tocColors.text, cursor: 'pointer', display: 'block', fontSize: 15, fontWeight: 600, lineHeight: 1.45, margin: 0, outline: 'none', padding: '8px 28px', textAlign: 'left', width: '100%' }}
+                    >
+                      {entry.label}
+                    </button>
+                  ))}
+                </nav>
+              </aside>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -136,6 +287,10 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
 
 const lightReaderTheme: IReactReaderStyle = {
   ...ReactReaderStyle,
+  arrow: {
+    ...ReactReaderStyle.arrow,
+    display: 'none',
+  },
   readerArea: {
     ...ReactReaderStyle.readerArea,
     transition: undefined,
@@ -146,7 +301,7 @@ const darkReaderTheme: IReactReaderStyle = {
   ...ReactReaderStyle,
   arrow: {
     ...ReactReaderStyle.arrow,
-    color: 'white',
+    display: 'none',
   },
   arrowHover: {
     ...ReactReaderStyle.arrowHover,
@@ -178,3 +333,21 @@ const darkReaderTheme: IReactReaderStyle = {
     color: 'white',
   },
 };
+
+type ReaderIconName = 'menu' | 'close' | 'previous' | 'next';
+
+function ReaderIcon({ name }: { name: ReaderIconName }) {
+  const path = name === 'menu'
+    ? <><path d="M5 7h14" /><path d="M5 12h14" /><path d="M5 17h14" /></>
+    : name === 'close'
+      ? <><path d="m7 7 10 10" /><path d="m17 7-10 10" /></>
+      : name === 'previous'
+        ? <path d="m14 6-6 6 6 6" />
+        : <path d="m10 6 6 6-6 6" />;
+
+  return (
+    <svg aria-hidden="true" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="20">
+      {path}
+    </svg>
+  );
+}

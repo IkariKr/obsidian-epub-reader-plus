@@ -69,7 +69,9 @@ Date: ${moment().toLocaleString()}
         contents={contents}
         title={file.basename}
         scrolled={this.settings.scrolledView}
-        mouseWheelPageTurn={this.settings.mouseWheelPageTurn} />,
+        mouseWheelPageTurn={this.settings.mouseWheelPageTurn}
+        readerBackgroundMode={this.settings.readerBackgroundMode}
+        readerBackgroundColor={this.settings.readerBackgroundColor} />,
       this.contentEl
     );
   }

@@ -1,6 +1,7 @@
-import { addIcon, Plugin, WorkspaceLeaf } from 'obsidian';
+import { addIcon, Plugin, TFile, WorkspaceLeaf } from 'obsidian';
 import { EpubPluginSettings, EpubSettingTab, DEFAULT_SETTINGS } from './EpubPluginSettings';
 import { EpubView, EPUB_FILE_EXTENSION, ICON_EPUB, VIEW_TYPE_EPUB } from './EpubView';
+import { refreshEpubViews } from './readerBackground';
 
 export default class EpubPlugin extends Plugin {
 	settings: EpubPluginSettings;
@@ -38,5 +39,20 @@ export default class EpubPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	/**
+	 * 重载已打开的 EPUB 阅读页，使阅读器设置即时更新。
+	 * Reloads open EPUB reading views so reader settings update immediately.
+	 */
+	async refreshEpubViews(): Promise<void> {
+		const views: Array<{ file: TFile; onLoadFile(file: TFile): Promise<void> }> = [];
+		this.app.workspace.getLeavesOfType(VIEW_TYPE_EPUB).forEach((leaf) => {
+			if (leaf.view instanceof EpubView && leaf.view.file != null) {
+				views.push({ file: leaf.view.file, onLoadFile: (file) => leaf.view.onLoadFile(file) });
+			}
+		});
+
+		await refreshEpubViews(views);
 	}
 }
