@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { ReactReader, ReactReaderStyle, type IReactReaderStyle } from 'react-reader';
 import type { Contents, Rendition } from 'epubjs';
 import useLocalStorageState from 'use-local-storage-state';
+import { getEpubOptions, getResizeDimensions, MAX_READING_PAGE_WIDTH } from './paginationLayout';
 import { getWheelPageAction } from './wheelNavigation';
 
 export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
@@ -32,9 +33,23 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
     themes.override('background', theme === 'dark' ? '#000' : '#fff');
   }, []);
 
+  const resizeRendition = useCallback(() => {
+    const readerHost = readerHostRef.current;
+    if (!readerHost) return;
+
+    const rendition = renditionRef.current;
+    const epubContainer = readerHost.querySelector('div.epub-container');
+    const readerViewport = epubContainer?.parentElement;
+    if (!readerViewport) return;
+
+    const dimensions = getResizeDimensions(rendition?.manager != null, readerViewport.clientWidth, readerViewport.clientHeight);
+    if (dimensions != null) rendition?.resize(dimensions.width, dimensions.height);
+  }, []);
+
   const updateFontSize = useCallback((size: number) => {
     renditionRef.current?.themes.fontSize(`${size}%`);
-  }, []);
+    window.requestAnimationFrame(resizeRendition);
+  }, [resizeRendition]);
 
   useEffect(() => {
     updateFontSize(fontSize);
@@ -44,18 +59,12 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
     const readerHost = readerHostRef.current;
     if (!readerHost) return;
 
-    const resizeRendition = () => {
-      if (readerHost.clientWidth > 0 && readerHost.clientHeight > 0) {
-        renditionRef.current?.resize(readerHost.clientWidth, readerHost.clientHeight);
-      }
-    };
-
     const resizeObserver = new ResizeObserver(resizeRendition);
     resizeObserver.observe(readerHost);
     resizeRendition();
 
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [resizeRendition]);
 
   const handleContentWheel = useCallback((event: WheelEvent) => {
     const settings = wheelSettingsRef.current;
@@ -97,8 +106,9 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
           onChange={e => setFontSize(parseInt(e.target.value))}
         />
       </div>
-      <div ref={readerHostRef} style={{ flex: '1 1 0', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
-        <ReactReader
+      <div style={{ alignItems: 'center', display: 'flex', flex: '1 1 0', justifyContent: 'center', minHeight: 0, overflow: 'hidden' }}>
+        <div ref={readerHostRef} style={{ height: '100%', maxWidth: `${MAX_READING_PAGE_WIDTH}px`, minHeight: 0, overflow: 'hidden', position: 'relative', width: '100%' }}>
+          <ReactReader
           title={title}
           showToc={true}
           location={location}
@@ -115,13 +125,10 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn }: {
             updateTheme(rendition, isDarkMode ? 'dark' : 'light');
             updateFontSize(fontSize);
           }}
-          epubOptions={scrolled ? {
-            allowPopups: true,
-            flow: "scrolled",
-            manager: "continuous",
-          } : undefined}
+          epubOptions={getEpubOptions(scrolled)}
           readerStyles={readerStyles}
-        />
+          />
+        </div>
       </div>
     </div>
   );
