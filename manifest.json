@@ -1,11 +1,10 @@
 {
-	"id": "obsidian-epub-plugin",
-	"name": "ePub Reader",
-	"version": "1.0.12",
+	"id": "epub-reader-plus",
+	"name": "EPUB Reader Plus",
+	"version": "1.0.0",
 	"minAppVersion": "0.12.0",
-	"description": "This is an ePub reader plugin for Obsidian. Can open document with \".epub\" file extension.",
-	"author": "caronchen",
-	"authorUrl": "https://github.com/caronchen/obsidian-epub-plugin",
-	"isDesktopOnly": false,
-	"fundingUrl": "https://paypal.me/caronchenhz"
+	"description": "A polished EPUB reader for Obsidian with paginated navigation and theme-aware reading.",
+	"author": "IkariKr",
+	"authorUrl": "https://github.com/IkariKr",
+	"isDesktopOnly": false
 }

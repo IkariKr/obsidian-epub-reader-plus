@@ -1,11 +1,11 @@
 {
-	"name": "obsidian-epub-plugin",
-	"version": "1.0.12",
-	"description": "This is an ePub reader plugin for Obsidian. Can open document with \".epub\" file extension.",
+	"name": "obsidian-epub-reader-plus",
+	"version": "1.0.0",
+	"description": "A polished EPUB reader for Obsidian with paginated navigation and theme-aware reading.",
 	"main": "src/main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"build": "tsc -p tsconfig.build.json --noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"test": "node --test --experimental-strip-types test\\wheelNavigation.test.ts test\\paginationLayout.test.ts test\\tocNavigation.test.ts test\\pageNavigation.test.ts test\\readerBackground.test.ts test\\publisherStyles.test.ts test\\fontSizeAnchor.test.ts test\\visibleTextAnchor.test.ts",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
@@ -26,13 +26,14 @@
 		"esbuild": "^0.13.12",
 		"obsidian": "latest",
 		"tslib": "^2.3.1",
-		"typescript": "^4.4.4"
+		"typescript": "^5.7.3"
 	},
 	"dependencies": {
 		"epubjs": "^0.3.93",
 		"react": "npm:@preact/compat@^17.0.3",
 		"react-dom": "npm:@preact/compat@^17.0.3",
 		"react-reader": "^1.0.2",
-		"use-local-storage-state": "^17.3.0"
+		"use-local-storage-state": "^17.3.0",
+		"preact": "^10.5.15"
 	}
 }

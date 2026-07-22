@@ -48,8 +48,9 @@ export default class EpubPlugin extends Plugin {
 	async refreshEpubViews(): Promise<void> {
 		const views: Array<{ file: TFile; onLoadFile(file: TFile): Promise<void> }> = [];
 		this.app.workspace.getLeavesOfType(VIEW_TYPE_EPUB).forEach((leaf) => {
-			if (leaf.view instanceof EpubView && leaf.view.file != null) {
-				views.push({ file: leaf.view.file, onLoadFile: (file) => leaf.view.onLoadFile(file) });
+			const epubView = leaf.view as unknown as EpubView;
+			if (epubView instanceof EpubView && epubView.file != null) {
+				views.push({ file: epubView.file, onLoadFile: (file) => epubView.onLoadFile(file) });
 			}
 		});
 

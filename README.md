@@ -1,30 +1,42 @@
-![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/caronchen/obsidian-epub-plugin) ![GitHub all releases](https://img.shields.io/github/downloads/caronchen/obsidian-epub-plugin/total) ![GitHub Release Date](https://img.shields.io/github/release-date/caronchen/obsidian-epub-plugin) ![GitHub last commit](https://img.shields.io/github/last-commit/caronchen/obsidian-epub-plugin)
+# EPUB Reader Plus for Obsidian
 
-## Obsidian ePub Reader Plugin
+EPUB Reader Plus is a polished EPUB reader for Obsidian. It opens `.epub` files directly in your vault and focuses on comfortable, paginated reading.
 
-This is an ePub reader plugin for Obsidian (https://obsidian.md). Can open document with `.epub` file extension.
+## Highlights
 
-- [Obsidian ePub Reader Plugin](#obsidian-epub-reader-plugin)
-  - [How to use](#how-to-use)
-    - [1. Put books into any vault folder](#1-put-books-into-any-vault-folder)
-    - [2. Click book to open an epub view](#2-click-book-to-open-an-epub-view)
-    - [3. Reading](#3-reading)
-  - [Manually installing the plugin](#manually-installing-the-plugin)
+- Single, centered paginated reading view with responsive reflow.
+- Mouse-wheel page turning in paginated mode.
+- Compact table of contents and modern navigation controls.
+- Theme-aware reader background, with an optional custom background color.
+- Publisher EPUB styles are preserved for headings, emphasis, and relative typography.
+- Reading progress is retained by book name; font-size changes anchor the visible text before reflowing.
 
-### How to use
+## Install
 
-#### 1. Put books into any vault folder
-<img width="326" alt="image" src="https://user-images.githubusercontent.com/150803/166110556-32f43b3c-fb54-4767-a8e1-005740359ade.png">
+After community-plugin review, install **EPUB Reader Plus** from Obsidian's Community plugins browser. For a manual install, download `main.js`, `manifest.json`, and `styles.css` from the matching GitHub Release and copy them to:
 
-#### 2. Click book to open an epub view
-![687BE408-BC9A-4AAC-915F-2CA77DE6516D](https://user-images.githubusercontent.com/150803/166110865-bcf2bade-f88b-40b9-855d-cffbd115132d.png)
+```text
+<vault>/.obsidian/plugins/epub-reader-plus/
+```
 
-#### 3. Reading
-![DD6C75EE-3805-43FE-9A86-4CFDF88DBB75](https://user-images.githubusercontent.com/150803/166111153-637ed20c-c49d-4c75-90b8-14ebf4e30172.png)
+## Migrating from ePub Reader
 
-**TOC**
-![260FB389-0503-488B-860D-3535A4F7CACF](https://user-images.githubusercontent.com/150803/166111158-cde58136-8a8a-4d93-96bf-14b7d3f80ab2.png)
+This plugin replaces the unmaintained **ePub Reader** plugin. Disable the original plugin before enabling EPUB Reader Plus; both plugins register the `.epub` extension and should not run together.
 
-### Manually installing the plugin
+Your per-book reading position is preserved because both plugins use the book name as the progress key. Reader settings start with the new plugin defaults.
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-epub-plugin/`.
+## Upstream and attribution
+
+EPUB Reader Plus is independently maintained and is based on [caronchen/obsidian-epub-plugin](https://github.com/caronchen/obsidian-epub-plugin), originally created by caronchen. It retains the upstream MIT License and copyright notice.
+
+## Development
+
+```bash
+npm install
+npm test
+npm run build
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

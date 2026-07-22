@@ -11,7 +11,7 @@ export interface TocEntry {
 
 export interface TocSelection {
   location: string;
-  tocOpen: false;
+  tocOpen: boolean;
 }
 
 /**

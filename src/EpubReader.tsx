@@ -12,6 +12,11 @@ import { flattenToc, getTocSelection, type TocEntry, type TocItem } from './tocN
 import { getFirstVisibleTextCfi } from './visibleTextAnchor';
 import { getWheelPageAction } from './wheelNavigation';
 
+type RuntimeRendition = Rendition & {
+  manager?: unknown;
+  resize(width: number, height: number, epubcfi?: string): void;
+};
+
 export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, readerBackgroundMode, readerBackgroundColor }: {
   contents: ArrayBuffer;
   title: string;
@@ -78,7 +83,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     const readerHost = readerHostRef.current;
     if (!readerHost) return;
 
-    const rendition = renditionRef.current;
+    const rendition = renditionRef.current as RuntimeRendition | null;
     const epubContainer = readerHost.querySelector('div.epub-container');
     const readerViewport = epubContainer?.parentElement;
     if (!readerViewport) return;
@@ -87,8 +92,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     if (dimensions != null && rendition != null) {
       // epub.js 的声明文件遗漏了第三个 epubcfi 参数；运行时 API 会将其作为本次重排的定位锚点。
       // epub.js type definitions omit the third epubcfi parameter; the runtime API uses it as the anchor for this reflow.
-      (rendition as Rendition & { resize(width: number, height: number, epubcfi?: string): void })
-        .resize(dimensions.width, dimensions.height, anchor ?? undefined);
+      rendition.resize(dimensions.width, dimensions.height, anchor ?? undefined);
     }
   }, []);
 
@@ -102,7 +106,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
   }, [resizeRendition]);
 
   const updateFontSize = useCallback((size: number) => {
-    const rendition = renditionRef.current;
+    const rendition = renditionRef.current as RuntimeRendition | null;
     if (rendition == null) return;
 
     if (!shouldPreserveFontSizeAnchor(scrolled, rendition.manager != null)) {
@@ -115,7 +119,10 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     const visibleTextAnchor = fontSizeAnchorRef.current == null && readerHostRef.current != null
       ? renderedContents.map((contents) => getFirstVisibleTextCfi(contents, readerHostRef.current!)).find((cfi) => cfi != null) ?? null
       : null;
-    const anchor = getFontSizeAnchor(fontSizeAnchorRef.current ?? visibleTextAnchor, rendition.currentLocation());
+    const anchor = getFontSizeAnchor(
+      fontSizeAnchorRef.current ?? visibleTextAnchor,
+      rendition.currentLocation() as unknown as { start?: { cfi?: string } },
+    );
     fontSizeAnchorRef.current = anchor;
     reflowFontSizeAtAnchor(rendition, size, anchor, resizeRendition, window.requestAnimationFrame);
 
@@ -149,7 +156,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     const rootDocument = window.document;
 
     const applyStylesToFrames = () => {
-      rootDocument.querySelectorAll('iframe[id^="epubjs-view-"]').forEach((frame) => {
+      rootDocument.querySelectorAll<HTMLIFrameElement>('iframe[id^="epubjs-view-"]').forEach((frame) => {
         if (frame.contentDocument != null) applyPublisherStyles(frame.contentDocument);
       });
     };

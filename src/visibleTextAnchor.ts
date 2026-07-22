@@ -41,7 +41,7 @@ export function getFirstVisibleTextCfi(contents: Contents, readerViewport: Eleme
   if (bounds == null) return null;
 
   const candidates: VisibleTextCandidate[] = [];
-  const walker = document.createTreeWalker(document.body, contents.window.NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode() as Text | null;
   while (node != null) {
     const text = node.textContent ?? '';

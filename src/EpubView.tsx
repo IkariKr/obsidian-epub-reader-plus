@@ -5,7 +5,7 @@ import { EpubPluginSettings } from "./EpubPluginSettings";
 import { EpubReader } from "./EpubReader";
 
 export const EPUB_FILE_EXTENSION = "epub";
-export const VIEW_TYPE_EPUB = "epub";
+export const VIEW_TYPE_EPUB = "epub-reader-plus";
 export const ICON_EPUB = "doc-epub";
 
 export class EpubView extends FileView {

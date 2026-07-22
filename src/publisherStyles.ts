@@ -28,7 +28,8 @@ export async function injectPublisherStyles(
   if (document.documentElement.hasAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE)) return false;
 
   document.documentElement.setAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE, 'pending');
-  const urls = getPublisherStyleSheetUrls(document.querySelectorAll('link[rel~="stylesheet"][href]'));
+  const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="stylesheet"][href]'));
+  const urls = getPublisherStyleSheetUrls(links);
   const cssTexts = await Promise.all(urls.map(async (url) => {
     try {
       const response = await loadStyleSheet(url);
