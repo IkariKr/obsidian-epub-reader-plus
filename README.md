@@ -1,6 +1,6 @@
 # EPUB Reader Plus for Obsidian
 
-EPUB Reader Plus is a polished EPUB reader for Obsidian. It opens `.epub` files directly in your vault and focuses on comfortable, paginated reading.
+EPUB Reader Plus is an EPUB reader plugin for Obsidian with paginated navigation and theme-aware reading. It opens `.epub` files directly in your vault.
 
 ## Highlights
 
