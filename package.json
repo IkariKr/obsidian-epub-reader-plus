@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-epub-reader-plus",
-	"version": "1.0.0",
-	"description": "A polished EPUB reader for Obsidian with paginated navigation and theme-aware reading.",
+	"version": "1.0.1",
+	"description": "A polished EPUB reader with paginated navigation and theme-aware reading.",
 	"main": "src/main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
