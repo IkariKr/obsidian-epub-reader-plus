@@ -34,8 +34,9 @@ export default class EpubPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const storedSettings = await this.loadData();
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings ?? {});
+		const storedSettings: unknown = await this.loadData();
+		const savedSettings = isRecord(storedSettings) ? storedSettings : {};
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
 	}
 
 	async saveSettings() {
@@ -57,4 +58,8 @@ export default class EpubPlugin extends Plugin {
 
 		await refreshEpubViews(views);
 	}
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
 }

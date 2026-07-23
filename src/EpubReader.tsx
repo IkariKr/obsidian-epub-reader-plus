@@ -26,7 +26,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
   readerBackgroundColor: string;
 }) => {
   const [location, setLocation] = useLocalStorageState<string | number>(`epub-${title}`, { defaultValue: 0 });
-  const renditionRef = useRef<Rendition | null>(null);
+  const renditionRef = useRef<RuntimeRendition | null>(null);
   const readerHostRef = useRef<HTMLDivElement | null>(null);
   const fontSizeAnchorRef = useRef<string | null>(null);
   const fontSizeAnchorResetTimerRef = useRef<number | null>(null);
@@ -82,7 +82,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
     const readerHost = readerHostRef.current;
     if (!readerHost) return;
 
-    const rendition = renditionRef.current as RuntimeRendition | null;
+    const rendition = renditionRef.current;
     const epubContainer = readerHost.querySelector('div.epub-container');
     const readerViewport = epubContainer?.parentElement;
     if (!readerViewport) return;
@@ -105,7 +105,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
   }, [resizeRendition]);
 
   const updateFontSize = useCallback((size: number) => {
-    const rendition = renditionRef.current as RuntimeRendition | null;
+    const rendition = renditionRef.current;
     if (rendition == null) return;
 
     if (!shouldPreserveFontSizeAnchor(scrolled, rendition.manager != null)) {

@@ -1,7 +1,7 @@
 import esbuild from "esbuild";
 import { resolve } from "path";
+import { builtinModules } from "node:module";
 import process from "process";
-import builtins from 'builtin-modules'
 
 const banner =
 `/*
@@ -43,7 +43,7 @@ esbuild.build({
 		'@codemirror/text',
 		'@codemirror/tooltip',
 		'@codemirror/view',
-		...builtins],
+		...builtinModules],
 	format: 'cjs',
 	plugins: [{
 		name: 'use-modern-jszip',

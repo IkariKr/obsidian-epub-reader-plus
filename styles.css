@@ -23,10 +23,10 @@
   width: 36px;
 }
 
-.epub-icon-button:hover,
-.epub-icon-button:focus-visible {
-  background: var(--background-modifier-hover) !important;
-  color: var(--text-normal) !important;
+body .epub-icon-button:hover,
+body .epub-icon-button:focus-visible {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
 }
 
 .epub-toc-toggle {
@@ -59,9 +59,9 @@
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.epub-toc-entry:hover,
-.epub-toc-entry:focus-visible {
-  background: var(--background-modifier-hover) !important;
-  border-left-color: var(--interactive-accent) !important;
-  color: var(--text-normal) !important;
+body .epub-toc-entry:hover,
+body .epub-toc-entry:focus-visible {
+  background: var(--background-modifier-hover);
+  border-left-color: var(--interactive-accent);
+  color: var(--text-normal);
 }

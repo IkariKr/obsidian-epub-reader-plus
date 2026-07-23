@@ -1,6 +1,6 @@
 import { WorkspaceLeaf, FileView, TFile, Menu } from "obsidian";
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { render } from 'preact';
 import { EpubPluginSettings } from "./EpubPluginSettings";
 import { EpubReader } from "./EpubReader";
 
@@ -60,11 +60,11 @@ Date: ${new Date().toLocaleString()}
   }
 
   async onLoadFile(file: TFile): Promise<void> {
-    ReactDOM.unmountComponentAtNode(this.contentEl);
+    render(null, this.contentEl);
     this.contentEl.empty();
     this.contentEl.addClass('epub-reader-plus-view');
     const contents = await this.app.vault.adapter.readBinary(file.path);
-    ReactDOM.render(
+    render(
       <EpubReader
         contents={contents}
         title={file.basename}
@@ -77,7 +77,7 @@ Date: ${new Date().toLocaleString()}
   }
 
   onunload(): void {
-    ReactDOM.unmountComponentAtNode(this.contentEl);
+    render(null, this.contentEl);
   }
 
   getDisplayText() {
