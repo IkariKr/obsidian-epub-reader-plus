@@ -240,6 +240,21 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
             const enhanceContents = (contents: Contents) => {
               const body = contents.window.document.body;
               body.oncontextmenu = () => false;
+              void contents.addStylesheetRules({
+                img: {
+                  'height': 'auto !important',
+                  'max-height': '100%',
+                  'max-width': '100%',
+                  'object-fit': 'contain',
+                  'width': 'auto !important',
+                },
+                svg: {
+                  'height': 'auto !important',
+                  'max-height': '100%',
+                  'max-width': '100%',
+                  'width': 'auto !important',
+                },
+              }, 'epub-reader-plus-image-aspect-ratio');
               contents.window.addEventListener('wheel', handleContentWheel, { passive: false });
               applyPublisherStyles(contents.window.document);
             };
