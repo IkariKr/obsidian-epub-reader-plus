@@ -1,0 +1,14 @@
+diff --git a/node_modules/localforage/src/utils/promise.js b/node_modules/localforage/src/utils/promise.js
+index fe908a8..3637c87 100644
+--- a/node_modules/localforage/src/utils/promise.js
++++ b/node_modules/localforage/src/utils/promise.js
+@@ -1,8 +1,4 @@
+-// This is CommonJS because lie is an external dependency, so Rollup
+-// can just ignore it.
+ if (typeof Promise === 'undefined') {
+-    // In the "nopromises" build this will just throw if you don't have
+-    // a global promise object, but it would throw anyway later.
+-    require('lie/polyfill');
++    throw new Error('A native Promise implementation is required.');
+ }
+ export default Promise;

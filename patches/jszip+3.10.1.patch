@@ -1,0 +1,34 @@
+diff --git a/node_modules/jszip/lib/external.js b/node_modules/jszip/lib/external.js
+index c846f5f..be94e59 100644
+--- a/node_modules/jszip/lib/external.js
++++ b/node_modules/jszip/lib/external.js
+@@ -3,13 +3,12 @@
+ // load the global object first:
+ // - it should be better integrated in the system (unhandledRejection in node)
+ // - the environment may have a custom Promise implementation (see zone.js)
+-var ES6Promise = null;
+-if (typeof Promise !== "undefined") {
+-    ES6Promise = Promise;
+-} else {
+-    ES6Promise = require("lie");
++if (typeof Promise === "undefined") {
++    throw new Error("A native Promise implementation is required.");
+ }
+ 
++var ES6Promise = Promise;
++
+ /**
+  * Let the user use/change some implementations.
+  */
+diff --git a/node_modules/jszip/lib/utils.js b/node_modules/jszip/lib/utils.js
+index fe585f4..ff03436 100644
+--- a/node_modules/jszip/lib/utils.js
++++ b/node_modules/jszip/lib/utils.js
+@@ -4,7 +4,6 @@ var support = require("./support");
+ var base64 = require("./base64");
+ var nodejsUtils = require("./nodejsUtils");
+ var external = require("./external");
+-require("setimmediate");
+ 
+ 
+ /**

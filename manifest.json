@@ -1,7 +1,7 @@
 {
 	"id": "epub-reader-plus",
 	"name": "EPUB Reader Plus",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "0.12.0",
 	"description": "A polished EPUB reader with paginated navigation and theme-aware reading.",
 	"author": "IkariKr",

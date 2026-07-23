@@ -1,0 +1,217 @@
+diff --git a/node_modules/epubjs/lib/archive.js b/node_modules/epubjs/lib/archive.js
+index 617030f..91b8f1f 100644
+--- a/node_modules/epubjs/lib/archive.js
++++ b/node_modules/epubjs/lib/archive.js
+@@ -13,7 +13,7 @@ var _mime = _interopRequireDefault(require("./utils/mime"));
+ 
+ var _path = _interopRequireDefault(require("./utils/path"));
+ 
+-var _jszip = _interopRequireDefault(require("jszip/dist/jszip"));
++var _jszip = _interopRequireDefault(require("jszip/lib/index"));
+ 
+ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+ 
+diff --git a/node_modules/epubjs/lib/contents.js b/node_modules/epubjs/lib/contents.js
+index 8392d87..eec0f7f 100644
+--- a/node_modules/epubjs/lib/contents.js
++++ b/node_modules/epubjs/lib/contents.js
+@@ -835,40 +835,6 @@ class Contents {
+       });
+     }
+   }
+-  /**
+-   * Append a script tag to the document head
+-   * @param {string} src url
+-   * @returns {Promise} loaded
+-   */
+-
+-
+-  addScript(src) {
+-    return new Promise(function (resolve, reject) {
+-      var $script;
+-      var ready = false;
+-
+-      if (!this.document) {
+-        resolve(false);
+-        return;
+-      }
+-
+-      $script = this.document.createElement("script");
+-      $script.type = "text/javascript";
+-      $script.async = true;
+-      $script.src = src;
+-
+-      $script.onload = $script.onreadystatechange = function () {
+-        if (!ready && (!this.readyState || this.readyState == "complete")) {
+-          ready = true;
+-          setTimeout(function () {
+-            resolve(true);
+-          }, 1);
+-        }
+-      };
+-
+-      this.document.head.appendChild($script);
+-    }.bind(this));
+-  }
+   /**
+    * Add a class to the contents container
+    * @param {string} className
+diff --git a/node_modules/epubjs/lib/rendition.js b/node_modules/epubjs/lib/rendition.js
+index 0dda80c..e47e301 100644
+--- a/node_modules/epubjs/lib/rendition.js
++++ b/node_modules/epubjs/lib/rendition.js
+@@ -111,9 +111,6 @@ class Rendition {
+       this.book.spine.hooks.content.register(this.injectStylesheet.bind(this));
+     }
+ 
+-    if (this.settings.script) {
+-      this.book.spine.hooks.content.register(this.injectScript.bind(this));
+-    }
+     /**
+      * @member {Themes} themes
+      * @memberof Rendition
+@@ -1030,23 +1027,6 @@ class Rendition {
+     style.setAttribute("href", this.settings.stylesheet);
+     doc.getElementsByTagName("head")[0].appendChild(style);
+   }
+-  /**
+-   * Hook to handle injecting scripts before
+-   * a Section is serialized
+-   * @param  {document} doc
+-   * @param  {Section} section
+-   * @private
+-   */
+-
+-
+-  injectScript(doc, section) {
+-    let script = doc.createElement("script");
+-    script.setAttribute("type", "text/javascript");
+-    script.setAttribute("src", this.settings.script);
+-    script.textContent = " "; // Needed to prevent self closing tag
+-
+-    doc.getElementsByTagName("head")[0].appendChild(script);
+-  }
+   /**
+    * Hook to handle the document identifier before
+    * a Section is serialized
+diff --git a/node_modules/epubjs/lib/store.js b/node_modules/epubjs/lib/store.js
+index e93526e..5e9d4cc 100644
+--- a/node_modules/epubjs/lib/store.js
++++ b/node_modules/epubjs/lib/store.js
+@@ -15,7 +15,7 @@ var _path = _interopRequireDefault(require("./utils/path"));
+ 
+ var _eventEmitter = _interopRequireDefault(require("event-emitter"));
+ 
+-var _localforage = _interopRequireDefault(require("localforage"));
++var _localforage = _interopRequireDefault(require("localforage/src/localforage"));
+ 
+ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+ 
+diff --git a/node_modules/epubjs/src/archive.js b/node_modules/epubjs/src/archive.js
+index 15b3835..83d85fd 100644
+--- a/node_modules/epubjs/src/archive.js
++++ b/node_modules/epubjs/src/archive.js
+@@ -2,7 +2,7 @@ import {defer, isXml, parse} from "./utils/core";
+ import request from "./utils/request";
+ import mime from "./utils/mime";
+ import Path from "./utils/path";
+-import JSZip from "jszip/dist/jszip";
++import JSZip from "jszip/lib/index";
+ 
+ /**
+  * Handles Unzipping a requesting files from an Epub Archive
+diff --git a/node_modules/epubjs/src/contents.js b/node_modules/epubjs/src/contents.js
+index 3effe72..0932771 100644
+--- a/node_modules/epubjs/src/contents.js
++++ b/node_modules/epubjs/src/contents.js
+@@ -812,40 +812,6 @@ class Contents {
+ 		}
+ 	}
+ 
+-	/**
+-	 * Append a script tag to the document head
+-	 * @param {string} src url
+-	 * @returns {Promise} loaded
+-	 */
+-	addScript(src) {
+-
+-		return new Promise(function(resolve, reject){
+-			var $script;
+-			var ready = false;
+-
+-			if(!this.document) {
+-				resolve(false);
+-				return;
+-			}
+-
+-			$script = this.document.createElement("script");
+-			$script.type = "text/javascript";
+-			$script.async = true;
+-			$script.src = src;
+-			$script.onload = $script.onreadystatechange = function() {
+-				if ( !ready && (!this.readyState || this.readyState == "complete") ) {
+-					ready = true;
+-					setTimeout(function(){
+-						resolve(true);
+-					}, 1);
+-				}
+-			};
+-
+-			this.document.head.appendChild($script);
+-
+-		}.bind(this));
+-	}
+-
+ 	/**
+ 	 * Add a class to the contents container
+ 	 * @param {string} className
+diff --git a/node_modules/epubjs/src/rendition.js b/node_modules/epubjs/src/rendition.js
+index 14a21b4..a947b6f 100644
+--- a/node_modules/epubjs/src/rendition.js
++++ b/node_modules/epubjs/src/rendition.js
+@@ -95,10 +95,6 @@ class Rendition {
+ 			this.book.spine.hooks.content.register(this.injectStylesheet.bind(this));
+ 		}
+ 
+-		if (this.settings.script) {
+-			this.book.spine.hooks.content.register(this.injectScript.bind(this));
+-		}
+-
+ 		/**
+ 		 * @member {Themes} themes
+ 		 * @memberof Rendition
+@@ -1029,21 +1025,6 @@ class Rendition {
+ 		doc.getElementsByTagName("head")[0].appendChild(style);
+ 	}
+ 
+-	/**
+-	 * Hook to handle injecting scripts before
+-	 * a Section is serialized
+-	 * @param  {document} doc
+-	 * @param  {Section} section
+-	 * @private
+-	 */
+-	injectScript(doc, section) {
+-		let script = doc.createElement("script");
+-		script.setAttribute("type", "text/javascript");
+-		script.setAttribute("src", this.settings.script);
+-		script.textContent = " "; // Needed to prevent self closing tag
+-		doc.getElementsByTagName("head")[0].appendChild(script);
+-	}
+-
+ 	/**
+ 	 * Hook to handle the document identifier before
+ 	 * a Section is serialized
+diff --git a/node_modules/epubjs/src/store.js b/node_modules/epubjs/src/store.js
+index 4775275..415bd5c 100644
+--- a/node_modules/epubjs/src/store.js
++++ b/node_modules/epubjs/src/store.js
+@@ -3,7 +3,7 @@ import httpRequest from "./utils/request";
+ import mime from "./utils/mime";
+ import Path from "./utils/path";
+ import EventEmitter from "event-emitter";
+-import localforage from "localforage";
++import localforage from "localforage/src/localforage";
+ 
+ /**
+  * Handles saving and requesting files from local storage
