@@ -33,7 +33,9 @@ export class EpubSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl('h2', { text: 'EPUB Settings' });
+		new Setting(containerEl)
+			.setName('EPUB Settings')
+			.setHeading();
 
 		new Setting(containerEl)
 			.setName("Scrolled View")

@@ -1,3 +1,8 @@
+.epub-reader-plus-view {
+  height: 100%;
+  overflow: hidden;
+}
+
 .epub-icon-button {
   align-items: center !important;
   appearance: none !important;

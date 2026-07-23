@@ -45,13 +45,12 @@ export async function injectPublisherStyles(
     return false;
   }
 
-  styles.forEach((css, index) => {
-    const style = document.createElement('style');
-    style.id = `obsidian-epub-publisher-style-${index}`;
-    style.setAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE, 'true');
-    style.textContent = css;
-    document.head.appendChild(style);
-  });
+  const publisherStyleSheets = await Promise.all(styles.map(async (css) => {
+    const styleSheet = new CSSStyleSheet();
+    await styleSheet.replace(css);
+    return styleSheet;
+  }));
+  document.adoptedStyleSheets = [...document.adoptedStyleSheets, ...publisherStyleSheets];
   document.documentElement.setAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE, 'applied');
   return true;
 }

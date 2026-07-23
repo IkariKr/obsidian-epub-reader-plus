@@ -61,8 +61,7 @@ Date: ${moment().toLocaleString()}
   async onLoadFile(file: TFile): Promise<void> {
     ReactDOM.unmountComponentAtNode(this.contentEl);
     this.contentEl.empty();
-    this.contentEl.style.height = '100%';
-    this.contentEl.style.overflow = 'hidden';
+    this.contentEl.addClass('epub-reader-plus-view');
     const contents = await this.app.vault.adapter.readBinary(file.path);
     ReactDOM.render(
       <EpubReader
