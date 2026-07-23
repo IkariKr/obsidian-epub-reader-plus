@@ -18,7 +18,6 @@ test('collects every publisher stylesheet once in document order', () => {
 test('injects publisher styles once and reports that a reflow is needed', async () => {
   const attributes = new Map<string, string>();
   const styles: Array<{ textContent: string }> = [];
-  const OriginalCssStyleSheet = globalThis.CSSStyleSheet;
   class TestStyleSheet {
     textContent = '';
 
@@ -26,7 +25,6 @@ test('injects publisher styles once and reports that a reflow is needed', async 
       this.textContent = css;
     }
   }
-  globalThis.CSSStyleSheet = TestStyleSheet as unknown as typeof CSSStyleSheet;
   const document = {
     documentElement: {
       hasAttribute: (name) => attributes.has(name),
@@ -34,20 +32,19 @@ test('injects publisher styles once and reports that a reflow is needed', async 
       setAttribute: (name, value) => attributes.set(name, value),
     },
     adoptedStyleSheets: styles,
+    defaultView: {
+      CSSStyleSheet: TestStyleSheet,
+    },
     querySelectorAll: () => [{ href: 'blob:one' }, { href: 'blob:two' }],
   } as unknown as Document;
   const load = async (href: string) => ({ ok: true, text: async () => `${href} { color: red; }` });
 
-  try {
-    assert.equal(await injectPublisherStyles(document, load), true);
-    assert.deepEqual(document.adoptedStyleSheets.map((style) => style.textContent), [
-      'blob:one { color: red; }',
-      'blob:two { color: red; }',
-    ]);
-    assert.equal(attributes.get(PUBLISHER_STYLE_MARKER_ATTRIBUTE), 'applied');
-    assert.equal(await injectPublisherStyles(document, load), false);
-    assert.equal(document.adoptedStyleSheets.length, 2);
-  } finally {
-    globalThis.CSSStyleSheet = OriginalCssStyleSheet;
-  }
+  assert.equal(await injectPublisherStyles(document, load), true);
+  assert.deepEqual(document.adoptedStyleSheets.map((style) => style.textContent), [
+    'blob:one { color: red; }',
+    'blob:two { color: red; }',
+  ]);
+  assert.equal(attributes.get(PUBLISHER_STYLE_MARKER_ATTRIBUTE), 'applied');
+  assert.equal(await injectPublisherStyles(document, load), false);
+  assert.equal(document.adoptedStyleSheets.length, 2);
 });

@@ -5,6 +5,11 @@ export interface ReaderColors {
   text: string;
 }
 
+export interface ReaderThemeRules {
+  html: { background: string };
+  body: { background: string; color: string };
+}
+
 export interface ReloadableEpubView<TFile> {
   file: TFile;
   onLoadFile(file: TFile): Promise<void>;
@@ -23,6 +28,17 @@ export function resolveReaderColors(
   return {
     background: mode === 'custom' && customBackground.length > 0 ? customBackground : themeBackground,
     text: themeText,
+  };
+}
+
+/**
+ * 将主题颜色限制为文档基础规则，使 EPUB 元素自身的颜色声明保持优先。
+ * Limits theme colors to document base rules so EPUB element color declarations keep precedence.
+ */
+export function getReaderThemeRules(colors: ReaderColors): ReaderThemeRules {
+  return {
+    html: { background: colors.background },
+    body: { background: colors.background, color: colors.text },
   };
 }
 

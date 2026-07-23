@@ -1,4 +1,5 @@
 import esbuild from "esbuild";
+import { resolve } from "path";
 import process from "process";
 import builtins from 'builtin-modules'
 
@@ -44,6 +45,14 @@ esbuild.build({
 		'@codemirror/view',
 		...builtins],
 	format: 'cjs',
+	plugins: [{
+		name: 'use-modern-jszip',
+		setup(build) {
+			build.onResolve({ filter: /^jszip(?:\/dist\/jszip|\/lib\/index)?$/ }, () => ({
+				path: resolve('node_modules/jszip/lib/index.js'),
+			}));
+		},
+	}],
 	watch: !prod,
 	target: 'es2016',
 	logLevel: "info",

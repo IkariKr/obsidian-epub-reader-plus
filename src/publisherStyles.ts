@@ -27,6 +27,9 @@ export async function injectPublisherStyles(
 ): Promise<boolean> {
   if (document.documentElement.hasAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE)) return false;
 
+  const StyleSheetConstructor = document.defaultView?.CSSStyleSheet;
+  if (StyleSheetConstructor == null) return false;
+
   document.documentElement.setAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE, 'pending');
   const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="stylesheet"][href]'));
   const urls = getPublisherStyleSheetUrls(links);
@@ -45,12 +48,17 @@ export async function injectPublisherStyles(
     return false;
   }
 
-  const publisherStyleSheets = await Promise.all(styles.map(async (css) => {
-    const styleSheet = new CSSStyleSheet();
-    await styleSheet.replace(css);
-    return styleSheet;
-  }));
-  document.adoptedStyleSheets = [...document.adoptedStyleSheets, ...publisherStyleSheets];
-  document.documentElement.setAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE, 'applied');
-  return true;
+  try {
+    const publisherStyleSheets = await Promise.all(styles.map(async (css) => {
+      const styleSheet = new StyleSheetConstructor();
+      await styleSheet.replace(css);
+      return styleSheet;
+    }));
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, ...publisherStyleSheets];
+    document.documentElement.setAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE, 'applied');
+    return true;
+  } catch {
+    document.documentElement.removeAttribute(PUBLISHER_STYLE_MARKER_ATTRIBUTE);
+    return false;
+  }
 }

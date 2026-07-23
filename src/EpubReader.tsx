@@ -7,7 +7,7 @@ import { getEpubOptions, getResizeDimensions, MAX_READING_PAGE_WIDTH } from './p
 import { navigatePage } from './pageNavigation';
 import { getFontSizeAnchor, reflowFontSizeAtAnchor, shouldPreserveFontSizeAnchor } from './fontSizeAnchor';
 import { injectPublisherStyles } from './publisherStyles';
-import { resolveReaderColors, type ReaderBackgroundMode } from './readerBackground';
+import { getReaderThemeRules, resolveReaderColors, type ReaderBackgroundMode } from './readerBackground';
 import { flattenToc, getTocSelection, type TocEntry, type TocItem } from './tocNavigation';
 import { getFirstVisibleTextCfi } from './visibleTextAnchor';
 import { getWheelPageAction } from './wheelNavigation';
@@ -66,8 +66,7 @@ export const EpubReader = ({ contents, title, scrolled, mouseWheelPageTurn, read
   const updateTheme = useCallback((rendition: Rendition) => {
     const themes = rendition.themes;
     const colors = getReaderColors();
-    themes.override('color', colors.text);
-    themes.override('background', colors.background);
+    themes.default(getReaderThemeRules(colors));
   }, [getReaderColors]);
 
   useEffect(() => {
