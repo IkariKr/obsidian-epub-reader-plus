@@ -23,8 +23,8 @@ export default class EpubPlugin extends Plugin {
 
 		try {
 			this.registerExtensions([EPUB_FILE_EXTENSION], VIEW_TYPE_EPUB);
-		} catch (error) {
-			console.log(`Existing file extension ${EPUB_FILE_EXTENSION}`);
+		} catch {
+			// Another plugin may already own the extension; keep the reader available through its view type.
 		}
 
 		this.addSettingTab(new EpubSettingTab(this.app, this));
@@ -34,7 +34,8 @@ export default class EpubPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const storedSettings = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings ?? {});
 	}
 
 	async saveSettings() {

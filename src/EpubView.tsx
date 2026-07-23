@@ -1,4 +1,4 @@
-import { WorkspaceLeaf, FileView, TFile, Menu, moment } from "obsidian";
+import { WorkspaceLeaf, FileView, TFile, Menu } from "obsidian";
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { EpubPluginSettings } from "./EpubPluginSettings";
@@ -15,7 +15,7 @@ export class EpubView extends FileView {
     super(leaf);
   }
 
-  onPaneMenu(menu: Menu, source: 'more-options' | 'tab-header' | string): void {
+  onPaneMenu(menu: Menu, source: string): void {
     menu.addItem((item) => {
       item
         .setTitle("Create new epub note")
@@ -27,7 +27,8 @@ export class EpubView extends FileView {
             file = await this.app.vault.create(fileName, this.getFileContent());
           }
           const fileLeaf = this.app.workspace.createLeafBySplit(this.leaf);
-          fileLeaf.openFile(file as TFile, {
+          if (!(file instanceof TFile)) return;
+          void fileLeaf.openFile(file, {
             active: true
           });
         });
@@ -51,7 +52,7 @@ export class EpubView extends FileView {
   getFileContent() {
     return `---
 Tags: ${this.settings.tags}
-Date: ${moment().toLocaleString()}
+Date: ${new Date().toLocaleString()}
 ---
 
 # ${this.file.basename}
